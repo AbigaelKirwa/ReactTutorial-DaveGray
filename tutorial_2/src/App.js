@@ -11,11 +11,12 @@ import { Route, Routes, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import api from './api/posts'
+import useWindowSize from './hooks/useWindowSize'
+import useAxiosFetch from './hooks/useAxiosFetch'
 
 
 function App() {
   const [posts, setPosts] = useState([])
-
   const [search, setSearch] = useState("")
   const [searchResults, setSearchResults] = useState([])
   const [postTitle, setPostTitle] = useState('')
@@ -23,6 +24,13 @@ function App() {
   const [editTitle, setEditTitle] = useState('')
   const [editBody, setEditBody] = useState('')
   const navigate= useNavigate()
+  const {width} = useWindowSize()
+
+  const {data, fetchError, isLoading} = useAxiosFetch("http://localhost:3500/posts")
+
+  useEffect(()=>{
+    setPosts(data)
+  },[data])
 
   const handleSubmit = async(e) =>{
     e.preventDefault()
@@ -81,31 +89,12 @@ function App() {
       setSearchResults(filteredResults.reverse())
   }, [posts, search])
 
-  useEffect(()=>{
-
-    const fetchData = async ()=>{
-        try{
-          const response = await api.get('/posts')
-          setPosts(response.data)
-        }catch(err){
-          if(err.response){
-            console.log(err.response.data)
-            console.log(err.response.header)
-            console.log(err.response.status)
-          }
-          else{
-            console.log(`Error: ${err.message}`)
-          }
-        }
-    }
-    fetchData()
-  }, [])
   return (
     <div className="App">
-      <Header title="React JS Blog"/>
+      <Header title="React JS Blog" width={width}/>
       <Nav search={search} setSearch={setSearch}/>
       <Routes>
-        <Route path='/' element={<Home posts={searchResults}/>}/> 
+        <Route path='/' element={<Home fetchError={fetchError} isLoading={isLoading} posts={searchResults}/>}/> 
         <Route path='/post' element={<NewPost handleSubmit={handleSubmit} postTitle={postTitle} postBody={postBody} setPostTitle={setPostTitle} setPostBody={setPostBody}/>}/>
         <Route path='/post/:id' element={<PostPage posts={posts} handleDelete={handleDelete} handleEdit={handleEdit}/>}/>
         <Route path='/edit/:id' element={<EditPost posts={posts} editBody= {editBody} editTitle={editTitle} setEditTitle={setEditTitle} setEditBody={setEditBody} handleEdit={handleEdit}/>}/>
