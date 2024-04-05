@@ -1,42 +1,37 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect} from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { useContext } from 'react'
-import { DataContext } from './context/DataContext'
-import api from './api/posts'
 import { format } from 'date-fns'
+import { useStoreActions, useStoreState } from 'easy-peasy'
 
 const EditPost = () => {
-    const [editTitle, setEditTitle] = useState('')
-    const [editBody, setEditBody] = useState('')
     const navigate= useNavigate()
-    const {posts, setPosts} = useContext(DataContext)
-    const handleEdit = async (id)=>{
-        const datetime =  format(new Date(), "MMMM dd yyyy pp" )
-        const updatePost = {id, title:editTitle, datetime, body:editBody}
-        const post = posts.find((post)=>parseInt(post.id) === parseInt(id))
-        console.log(parseInt(post.id))
-        console.log(parseInt(id))
-        try{
-          const response = await api.put(`/posts/${parseInt(id)}`, updatePost)
-          setPosts(posts.map((post)=>parseInt(post.id) === parseInt(id) ? {...response.data} : post))
-          setEditTitle('')
-          setEditBody('')
-          navigate('/')
-        }catch(err){
-          console.log(err.response.data)
-          console.log(err.response.status)
+    const params = useParams();
+    const id = params.id
     
-        }
-    }
-    const {id} = useParams()
-    const post = posts.find((post)=>parseInt(post.id) === parseInt(id))
+    const editTitle = useStoreState((state)=>state.editTitle);
+    const setEditTitle = useStoreActions((action)=>action.setEditTitle)
+
+    const editBody = useStoreState((state)=>state.editBody)
+    const setEditBody = useStoreActions((action)=>action.setEditBody)
+    const editPost = useStoreActions((action)=>action.editPost)
+
+    const getPostById= useStoreState((state)=>state.getPostById)
+    const post = getPostById(id)
 
     useEffect(()=>{
-        if(post){
-            setEditTitle(post.title)
-            setEditBody(post.body)
-        } 
-    }, [post, setEditTitle, setEditBody])
+      if(post){
+          setEditTitle(post.title)
+          setEditBody(post.body)
+      } 
+  }, [post, setEditTitle, setEditBody])
+
+    const handleEdit = (id)=>{
+      const datetime =  format(new Date(), "MMMM dd yyyy pp" )
+      const updatePost = {id, title:editTitle, datetime, body:editBody}
+      editPost(updatePost)
+      navigate(`/post/${id}`)
+    }
+
   return (
     <main className='NewPost'>
         {editTitle && 
